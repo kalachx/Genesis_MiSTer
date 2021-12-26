@@ -124,6 +124,7 @@ module system
 	
 	input         EN_HIFI_PCM,
 	input         LADDER,
+	input         FM_OVERDRIVE,
 	input         OBJ_LIMIT_HIGH,
 
 	output		  TRANSP_DETECT,
@@ -1403,6 +1404,7 @@ jt12 fm
 	.dout(FM_DO),
 	.en_hifi_pcm( EN_HIFI_PCM ),
 	.ladder(LADDER),
+	.fm_overdrive(FM_OVERDRIVE),
 	.snd_left(FM_left),
 	.snd_right(FM_right)
 );

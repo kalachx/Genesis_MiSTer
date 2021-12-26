@@ -38,6 +38,7 @@ module jt12_top (
     output          irq_n,
     // Configuration
     input           en_hifi_pcm,  // high to enable PCM interpolation on YM2612 mode
+    input           fm_overdrive,  // high to enable FM operator overdrive
     // ADPCM pins
     output  [19:0]  adpcma_addr,  // real hardware has 10 pins multiplexed through RMPX pin
     output  [ 3:0]  adpcma_bank,
@@ -535,6 +536,7 @@ jt12_op #(.num_ch(num_ch)) u_op(
     .rst            ( rst           ),
     .clk            ( clk           ),
     .clk_en         ( clk_en        ),
+    .fm_overdrive   ( fm_overdrive  ),
     .pg_phase_VIII  ( phase_VIII    ),
     .eg_atten_IX    ( eg_IX         ),
     .fb_II          ( fb_II         ),

@@ -244,7 +244,7 @@ video_freak video_freak
 // 0         1         2         3          4         5         6   
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// XXXXXXXXXXXX XXXXXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXXXXXXXXXX
+// XXXXXXXXXXXX XXXXXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXXXXXXXXXXX
 
 `include "build_id.v"
 localparam CONF_STR = {
@@ -280,6 +280,7 @@ localparam CONF_STR = {
 	"P1OEF,Audio Filter,Model 1,Model 2,Minimal,No Filter;",
 	"P1OB,FM Chip,YM2612,YM3438;",
 	"P1ON,HiFi PCM,No,Yes;",
+	"P1oO,FM Overdrive,No,Yes;",
 
 	"P2,Input;",
 	"P2-;",
@@ -608,6 +609,7 @@ system system
 	.EN_HIFI_PCM(status[23]), // Option "N"
 	.LADDER(~status[11]),
 	.LPF_MODE(status[15:14]),
+	.FM_OVERDRIVE(status[56]),
 
 	.OBJ_LIMIT_HIGH(status[31]),
 

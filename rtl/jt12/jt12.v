@@ -36,6 +36,7 @@ module jt12 (
     // configuration
     input           en_hifi_pcm,
     input           ladder,
+    input           fm_overdrive,
     // combined output
     output  signed  [15:0]  snd_right,
     output  signed  [15:0]  snd_left,
@@ -57,6 +58,7 @@ jt12_top u_jt12(
     // configuration
     .en_hifi_pcm    ( en_hifi_pcm ),
     .ladder         ( ladder ),
+    .fm_overdrive   ( fm_overdrive ),
     // Unused ADPCM pins
     .adpcma_addr    (      ), // real hardware has 10 pins multiplexed through RMPX pin
     .adpcma_bank    (      ),
