@@ -40,7 +40,6 @@ module jt12_op(
     input           yuse_prev2,
     input           yuse_internal, 
     input           test_214,
-    input           fm_overdrive,
     
     input           s1_enters,
     input           s2_enters,
@@ -204,12 +203,10 @@ end
 wire [11:0]  logsin_IX;
 
 jt12_logsin u_logsin (
-    .clk          ( clk       ),
-    .clk_en       ( clk_en    ),
-    .addr         ( aux_VIII[7:0] ),
-    .fm_overdrive ( fm_overdrive ),
-    .logsin       ( logsin_IX )
-
+    .clk    ( clk       ),
+    .clk_en ( clk_en    ),
+    .addr   ( aux_VIII[7:0] ),
+    .logsin ( logsin_IX )
 );  
 
 
@@ -227,8 +224,8 @@ reg  [9:0] mantissa_XI;
 reg  [3:0] exponent_X, exponent_XI;
 
 jt12_exprom u_exprom(
-    .clk    ( clk ),
-    .clk_en ( clk_en ),
+    .clk    ( clk       ),
+    .clk_en ( clk_en    ),
     .addr   ( atten_internal_IX[7:0] ),
     .exp    ( mantissa_X )
 );

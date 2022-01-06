@@ -1,3 +1,6 @@
+set_global_assignment -name VERILOG_FILE rtl/jt12/jt12_op_hd.v
+set_global_assignment -name VERILOG_FILE rtl/jt12/jt12_logsin_hd.v
+set_global_assignment -name VERILOG_FILE rtl/jt12/jt12_exprom_hd.v
 set_global_assignment -name QIP_FILE rtl/FX68K/fx68k.qip
 set_global_assignment -name QIP_FILE rtl/T80/T80.qip
 set_global_assignment -name QIP_FILE rtl/jt12/jt12.qip

@@ -244,14 +244,22 @@ video_freak video_freak
 // 0         1         2         3          4         5         6   
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// XXXXXXXXXXXX XXXXXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXXXXXXXXXXX
+// XXXXXXXXXXXX XXXXXXXXXXXX XXXXXX   XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 `include "build_id.v"
 localparam CONF_STR = {
 	"Genesis;;",
 	"FS,BINGENMD ;",
 	"-;",
-	"O67,Region,JP,US,EU;",
+	"OQ,Blast Processing,Original,True;",
+	"oO,FM Overdrive,No,Yes;",
+	"oPQ,- Sine LUT,Default,SineExp/3,Clean512,Linear512;",
+	"oR,  Extra Boost,No,Yes;",
+	"oS,  Exponent,Default,ExpSine;",
+	"oT,  Feedback Gain,Default,Reduced;",
+	"oUV,Color Palette,Default,Raw RGB,Composite,Grayscale;",
+	"-;",
+	"O67,Region,JP,US,EU,CH;",
 	"O89,Auto Region,Header,File Ext,Disabled;",
 	"D2ORS,Priority,US>EU>JP,EU>US>JP,US>JP>EU,JP>US>EU;",
 	"-;",
@@ -280,7 +288,6 @@ localparam CONF_STR = {
 	"P1OEF,Audio Filter,Model 1,Model 2,Minimal,No Filter;",
 	"P1OB,FM Chip,YM2612,YM3438;",
 	"P1ON,HiFi PCM,No,Yes;",
-	"P1oO,FM Overdrive,No,Yes;",
 
 	"P2,Input;",
 	"P2-;",
@@ -301,13 +308,12 @@ localparam CONF_STR = {
 	"P3-;",
 	"P3o34,ROM Storage,Auto,SDRAM,DDR3;",
 	"P3-;",
-	"P3OPQ,CPU Turbo,None,Medium,High;",
 	"P3OV,Sprite Limit,Normal,High;",
 	"P3-;",
 
 	"-;",
-	"H3o0,Enable FM,Yes,No;",
-	"H3o1,Enable PSG,Yes,No;",
+	"H3o0,Status 32,0,1;",
+	"H3o1,Status 33,0,1;",
 	"H3-;",
 	"R0,Reset;",
 	"J1,A,B,C,Start,Mode,X,Y,Z;",
@@ -317,6 +323,20 @@ localparam CONF_STR = {
 };
 
 wire [63:0] status;
+wire fm_overdrive;
+wire [1:0] fmo_sinelut;
+wire fmo_extra;
+wire fmo_exprom;
+wire fmo_gain;
+wire [1:0] use_color_lut;
+
+assign fm_overdrive = status[56];
+assign fmo_sinelut = status[58:57];
+assign fmo_extra = status[59];
+assign fmo_exprom = status[60];
+assign fmo_gain = status[61];
+assign use_color_lut = status[63:62];
+
 wire  [1:0] buttons;
 wire [11:0] joystick_0,joystick_1,joystick_2,joystick_3,joystick_4;
 wire  [7:0] joy0_x,joy0_y,joy1_x,joy1_y;
@@ -524,6 +544,8 @@ end
 
 ///////////////////////////////////////////////////
 wire [3:0] r, g, b;
+wire [7:0] lut_r, lut_g, lut_b;
+wire [23:0] pce_color;
 wire vs,hs;
 wire ce_pix;
 wire hblank, vblank;
@@ -532,12 +554,44 @@ wire [1:0] resolution;
 
 wire reset = RESET | status[0] | buttons[1] | region_set | bk_loading;
 
+logic [23:0] pal_color;
+reg [9:0] r1, r2, g1, g2, b1, b2, luma;
+logic [7:0] r_comp, b_comp, g_comp;
+assign {r_comp, g_comp, b_comp} = (use_color_lut == 2'b10) ? pal_color : {luma[9:2], luma[9:2], luma[9:2]};
+
+// LUT used for Composite palette
+dpram #(
+	.addr_width(12),
+	.data_width(24),
+	.mem_init_file("palette4096.mif")
+) palette_ram (
+	.clock(clk_sys),
+	.address_a({r,g,b}),
+	.q_a(pal_color)
+);
+// LUT for Default and Grayscale color palettes
 wire [7:0] color_lut[16] = '{
 	8'd0,   8'd27,  8'd49,  8'd71,
 	8'd87,  8'd103, 8'd119, 8'd130,
 	8'd146, 8'd157, 8'd174, 8'd190,
 	8'd206, 8'd228, 8'd255, 8'd255
 };
+
+// Generate Luma for Grayscale palette
+always @(posedge clk_sys) begin
+	r1 <= {2'd0, color_lut[r][7:0]};
+	r2 <= {5'd0, color_lut[r][7:3]};
+	g1 <= {1'd0, color_lut[g], color_lut[g][7]};
+	g2 <= {4'd0, color_lut[g][7:2]};
+	b1 <= {4'd0, color_lut[b][7:2]};
+	b2 <= {5'd0, color_lut[b][7:3]};
+	luma <= r1 + r2 + g1 + g2 + b1 + b2;
+end
+
+// Assign colors depending on use_color_lut value
+assign lut_r = use_color_lut[1] ? r_comp : (use_color_lut[0] ? {r, r} : color_lut[r]);
+assign lut_g = use_color_lut[1] ? g_comp : (use_color_lut[0] ? {g, g} : color_lut[g]);
+assign lut_b = use_color_lut[1] ? b_comp : (use_color_lut[0] ? {b, b} : color_lut[b]);
 
 system system
 (
@@ -557,7 +611,7 @@ system system
 	.DAC_LDATA(AUDIO_L),
 	.DAC_RDATA(AUDIO_R),
 	
-	.TURBO(status[26:25]),
+	.TURBO({status[26], 1'b0}), // Medium turbo is unstable
 
 	.RED(r),
 	.GREEN(g),
@@ -604,12 +658,16 @@ system system
 	.SERJOYSTICK_OUT(SERJOYSTICK_OUT),
 	.SER_OPT(SER_OPT),
 
-	.ENABLE_FM(~dbg_menu | ~status[32]),
-	.ENABLE_PSG(~dbg_menu | ~status[33]),
-	.EN_HIFI_PCM(status[23]), // Option "N"
+	.ENABLE_FM(1'b1),
+	.ENABLE_PSG(1'b1),
+	.EN_HIFI_PCM(status[23]),
 	.LADDER(~status[11]),
 	.LPF_MODE(status[15:14]),
-	.FM_OVERDRIVE(status[56]),
+	.FM_OVERDRIVE(fm_overdrive),
+	.FMO_SINELUT(fmo_sinelut),
+	.FMO_EXTRA(fmo_extra),
+	.FMO_EXPROM(fmo_exprom),
+	.FMO_GAIN(fmo_gain),
 
 	.OBJ_LIMIT_HIGH(status[31]),
 
@@ -711,9 +769,9 @@ cofi coffee (
 	.vblank(vblank),
 	.hs(hs),
 	.vs(vs),
-	.red(color_lut[r]),
-	.green(color_lut[g]),
-	.blue(color_lut[b]),
+	.red(lut_r),
+	.green(lut_g),
+	.blue(lut_b),
 
 	.hblank_out(hblank_c),
 	.vblank_out(vblank_c),
